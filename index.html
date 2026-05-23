@@ -1,0 +1,1027 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
+<title>REFLECT // particle ritual</title>
+<style>
+  :root {
+    --bg: #0a0612;
+    --ink: #f4ecdc;
+    --hot: #ff3b6b;
+    --cool: #4cc9f0;
+    --gold: #f0b429;
+    --dim: #6b5b95;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body {
+    width: 100%; height: 100%;
+    overflow: hidden;
+    background: var(--bg);
+    color: var(--ink);
+    font-family: 'Times New Roman', serif;
+    user-select: none;
+    -webkit-tap-highlight-color: transparent;
+    touch-action: none;
+  }
+  body {
+    background:
+      radial-gradient(ellipse at 20% 10%, rgba(76, 201, 240, 0.08), transparent 50%),
+      radial-gradient(ellipse at 80% 90%, rgba(255, 59, 107, 0.08), transparent 50%),
+      var(--bg);
+  }
+  canvas {
+    position: absolute; inset: 0;
+    width: 100%; height: 100%;
+    display: block;
+  }
+  .ui {
+    position: fixed;
+    pointer-events: none;
+    z-index: 10;
+  }
+  .topbar {
+    top: 0; left: 0; right: 0;
+    padding: 18px 24px;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    font-family: 'Courier New', monospace;
+    font-size: 11px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    mix-blend-mode: screen;
+  }
+  .brand {
+    font-family: 'Times New Roman', serif;
+    font-style: italic;
+    font-size: 22px;
+    letter-spacing: 0.05em;
+    text-transform: none;
+    color: var(--ink);
+    line-height: 1;
+  }
+  .brand::after {
+    content: '·';
+    color: var(--hot);
+    margin-left: 6px;
+  }
+  .sub {
+    opacity: 0.5;
+    margin-top: 4px;
+    font-size: 9px;
+  }
+  .stat {
+    text-align: right;
+    opacity: 0.78;
+    line-height: 1.7;
+  }
+  .stat b {
+    font-weight: normal;
+    color: var(--gold);
+  }
+  .stat .title {
+    font-style: italic;
+    font-family: 'Times New Roman', serif;
+    text-transform: none;
+    letter-spacing: 0.02em;
+    font-size: 13px;
+    color: var(--ink);
+    opacity: 0.9;
+  }
+  .hint {
+    bottom: 0; left: 0; right: 0;
+    padding: 20px 24px;
+    text-align: center;
+    font-family: 'Courier New', monospace;
+    font-size: 10px;
+    letter-spacing: 0.3em;
+    text-transform: uppercase;
+    opacity: 0.5;
+  }
+  .overlay {
+    position: fixed; inset: 0;
+    z-index: 100;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(10, 6, 18, 0.88);
+    backdrop-filter: blur(8px);
+    transition: opacity 0.5s ease;
+    cursor: pointer;
+  }
+  .overlay.hidden { opacity: 0; pointer-events: none; }
+  .card {
+    text-align: center;
+    padding: 40px 50px;
+    max-width: 520px;
+  }
+  .card .eyebrow {
+    font-family: 'Courier New', monospace;
+    font-size: 11px;
+    letter-spacing: 0.4em;
+    text-transform: uppercase;
+    color: var(--hot);
+    margin-bottom: 14px;
+  }
+  .card h1 {
+    font-family: 'Times New Roman', serif;
+    font-style: italic;
+    font-weight: 400;
+    font-size: clamp(36px, 7vw, 64px);
+    line-height: 0.98;
+    margin-bottom: 24px;
+  }
+  .card h1 .alt { color: var(--gold); }
+  .card p {
+    font-family: 'Times New Roman', serif;
+    font-size: 16px;
+    line-height: 1.55;
+    opacity: 0.85;
+    margin-bottom: 12px;
+  }
+  .card p.small {
+    font-family: 'Courier New', monospace;
+    font-size: 10px;
+    letter-spacing: 0.3em;
+    text-transform: uppercase;
+    opacity: 0.5;
+    margin-top: 28px;
+  }
+  .level-num {
+    font-family: 'Times New Roman', serif;
+    font-style: italic;
+    font-size: clamp(100px, 22vw, 180px);
+    line-height: 1;
+    color: var(--gold);
+    margin: 0 0 8px;
+  }
+  .level-title {
+    font-family: 'Times New Roman', serif;
+    font-style: italic;
+    font-size: 28px;
+    margin-bottom: 6px;
+  }
+  .level-sub {
+    font-family: 'Courier New', monospace;
+    font-size: 11px;
+    letter-spacing: 0.3em;
+    text-transform: uppercase;
+    opacity: 0.6;
+    margin-bottom: 18px;
+  }
+  .end-art {
+    display: flex; gap: 8px; justify-content: center; margin: 24px 0 8px;
+  }
+  .end-art span {
+    width: 10px; height: 10px; border-radius: 50%;
+    background: var(--gold);
+    animation: pulse 1.4s ease-in-out infinite;
+  }
+  .end-art span:nth-child(2) { animation-delay: 0.2s; background: var(--hot); }
+  .end-art span:nth-child(3) { animation-delay: 0.4s; }
+  @keyframes pulse {
+    0%, 100% { opacity: 0.3; transform: scale(0.8); }
+    50% { opacity: 1; transform: scale(1.2); }
+  }
+  .grain {
+    position: fixed; inset: 0;
+    z-index: 5;
+    pointer-events: none;
+    opacity: 0.04;
+    mix-blend-mode: overlay;
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='200' height='200'><filter id='n'><feTurbulence baseFrequency='0.9'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
+  }
+  .corner {
+    position: fixed;
+    width: 14px; height: 14px;
+    border: 1px solid var(--ink);
+    opacity: 0.3;
+    z-index: 8;
+    pointer-events: none;
+  }
+  .c-tl { top: 12px; left: 12px; border-right: none; border-bottom: none; }
+  .c-tr { top: 12px; right: 12px; border-left: none; border-bottom: none; }
+  .c-bl { bottom: 12px; left: 12px; border-right: none; border-top: none; }
+  .c-br { bottom: 12px; right: 12px; border-left: none; border-top: none; }
+
+</style>
+</head>
+<body>
+
+<canvas id="cv"></canvas>
+<div class="grain"></div>
+
+<div class="corner c-tl"></div>
+<div class="corner c-tr"></div>
+<div class="corner c-bl"></div>
+<div class="corner c-br"></div>
+
+<div class="ui topbar">
+  <div>
+    <div class="brand">reflect</div>
+    <div class="sub">a particle ritual · ch. 01 — x</div>
+  </div>
+  <div class="stat">
+    <div class="title" id="titleTxt">drifter</div>
+    level <b id="lvl">1</b> / 10<br/>
+    circles <b id="cir">0 / 0</b>
+  </div>
+</div>
+
+<div class="ui hint" id="hint">
+  draw a mirror · 2 seconds · cross the trail inside a circle
+</div>
+
+<div class="overlay" id="intro">
+  <div class="card">
+    <div class="eyebrow">— ch. 01 — x</div>
+    <h1>draw the <span class="alt">mirror</span>,<br/>catch the <span class="alt">echo</span>.</h1>
+    <p>A single electron drifts. Sketch a brief mirror with your finger or cursor — it lives for two seconds, bending the electron's path.</p>
+    <p>When the electron crosses its own trail inside a circle, a particle is born. Fill every circle to advance through ten chambers.</p>
+    <p class="small">tap or click anywhere to begin</p>
+  </div>
+</div>
+
+<div class="overlay hidden" id="next">
+  <div class="card">
+    <div class="eyebrow">— complete</div>
+    <div class="level-num" id="nextLvl">2</div>
+    <div class="level-title" id="nextTitle">echo</div>
+    <div class="level-sub" id="nextSub">three circles</div>
+    <p style="font-style:italic;" id="nextFlavor">the field deepens.</p>
+    <p class="small">tap to continue</p>
+  </div>
+</div>
+
+<div class="overlay hidden" id="end">
+  <div class="card">
+    <div class="eyebrow">— ten of ten</div>
+    <h1>the field is <span class="alt">still</span>.</h1>
+    <p>You folded space ten times. Every echo found its home.</p>
+    <div class="end-art"><span></span><span></span><span></span></div>
+    <p class="small">tap to begin again</p>
+  </div>
+</div>
+
+<script>
+(() => {
+  const cv = document.getElementById('cv');
+  const ctx = cv.getContext('2d');
+  let W = 0, H = 0, DPR = 1;
+
+  const dlog = () => {};
+
+  function resize() {
+    DPR = Math.min(window.devicePixelRatio || 1, 2);
+    W = window.innerWidth;
+    H = window.innerHeight;
+    cv.width = W * DPR;
+    cv.height = H * DPR;
+    cv.style.width = W + 'px';
+    cv.style.height = H + 'px';
+    ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+  }
+  resize();
+  window.addEventListener('resize', resize);
+
+  // ---------- LEVEL DESIGN ----------
+  // Each level has hand-tuned parameters for a real difficulty curve.
+  // circles: count, radius range [min,max], placement strategy
+  // speed: electron base speed
+  // mirrorLife: how long mirrors last
+  // trailLife: how long the trail persists
+  // obstacles: optional fixed walls
+  const LEVELS = [
+    { title: 'drifter',    sub: 'two circles',         flavor: 'gentle physics. learn the curve.',
+      count: 2, rMin: 70, rMax: 85, speed: 110, mirrorLife: 2.0, trailLife: 5.0, placement: 'wide', obstacles: [] },
+    { title: 'echo',       sub: 'three circles',       flavor: 'the field deepens.',
+      count: 3, rMin: 60, rMax: 75, speed: 120, mirrorLife: 2.0, trailLife: 4.8, placement: 'wide', obstacles: [] },
+    { title: 'triad',      sub: 'four circles',        flavor: 'pattern, then break it.',
+      count: 4, rMin: 55, rMax: 70, speed: 125, mirrorLife: 2.0, trailLife: 4.6, placement: 'spread', obstacles: [] },
+    { title: 'lattice',    sub: 'five small circles',  flavor: 'tighter targets. plan the arc.',
+      count: 5, rMin: 45, rMax: 58, speed: 130, mirrorLife: 2.0, trailLife: 4.4, placement: 'spread', obstacles: [] },
+    { title: 'meridian',   sub: 'central wall',        flavor: 'a barrier intervenes.',
+      count: 4, rMin: 50, rMax: 65, speed: 135, mirrorLife: 1.8, trailLife: 4.2, placement: 'sides', obstacles: ['meridian'] },
+    { title: 'six',        sub: 'six circles',         flavor: 'a hexagon of waiting.',
+      count: 6, rMin: 42, rMax: 55, speed: 135, mirrorLife: 1.8, trailLife: 4.2, placement: 'ring', obstacles: [] },
+    { title: 'gate',       sub: 'split chamber',       flavor: 'two rooms. one electron.',
+      count: 6, rMin: 40, rMax: 52, speed: 140, mirrorLife: 1.8, trailLife: 4.0, placement: 'spread', obstacles: ['gate'] },
+    { title: 'fast',       sub: 'seven · accelerated', flavor: 'the drift quickens.',
+      count: 7, rMin: 38, rMax: 50, speed: 165, mirrorLife: 1.6, trailLife: 3.8, placement: 'spread', obstacles: [] },
+    { title: 'cage',       sub: 'eight · walled',      flavor: 'corners and obstacles.',
+      count: 8, rMin: 36, rMax: 48, speed: 165, mirrorLife: 1.6, trailLife: 3.6, placement: 'spread', obstacles: ['corners'] },
+    { title: 'singularity',sub: 'nine · narrow',       flavor: 'the final fold.',
+      count: 9, rMin: 32, rMax: 44, speed: 175, mirrorLife: 1.5, trailLife: 3.4, placement: 'dense', obstacles: ['cross'] },
+  ];
+
+  // ---------- state ----------
+  const state = {
+    level: 1,
+    circles: [],
+    electron: { x: 0, y: 0, vx: 0, vy: 0 },
+    trail: [],
+    mirrors: [],
+    drawing: null,
+    burstParticles: [],
+    obstacles: [],  // fixed walls: {segments:[...]}
+    running: false,
+  };
+
+  // ---------- placement helpers ----------
+  function pickPosition(strategy, r, existing, obstacles) {
+    const margin = r + 50;
+    const topPad = 80;
+    const bottomPad = 70;
+    for (let attempt = 0; attempt < 300; attempt++) {
+      let x, y;
+      if (strategy === 'wide') {
+        x = margin + Math.random() * (W - margin * 2);
+        y = topPad + margin + Math.random() * (H - margin * 2 - topPad - bottomPad);
+      } else if (strategy === 'spread') {
+        x = margin + Math.random() * (W - margin * 2);
+        y = topPad + margin + Math.random() * (H - margin * 2 - topPad - bottomPad);
+      } else if (strategy === 'sides') {
+        // split into left/right halves, leaving a center gap for the wall
+        const side = Math.random() < 0.5 ? 0 : 1;
+        const halfW = W / 2;
+        const gap = Math.min(60, W * 0.08); // buffer from center
+        if (side === 0) {
+          // left half
+          const xMin = margin;
+          const xMax = Math.max(xMin + r, halfW - gap - r);
+          x = xMin + Math.random() * Math.max(1, xMax - xMin);
+        } else {
+          // right half
+          const xMin = halfW + gap + r;
+          const xMax = Math.max(xMin + r, W - margin);
+          x = xMin + Math.random() * Math.max(1, xMax - xMin);
+        }
+        y = topPad + margin + Math.random() * Math.max(1, H - margin * 2 - topPad - bottomPad);
+      } else if (strategy === 'ring') {
+        const idx = existing.length;
+        const total = 6;
+        const angle = (idx / total) * Math.PI * 2 - Math.PI / 2;
+        const ringR = Math.min(W, H) * 0.32;
+        x = W / 2 + Math.cos(angle) * ringR;
+        y = H / 2 + Math.sin(angle) * ringR;
+      } else if (strategy === 'dense') {
+        x = margin + Math.random() * (W - margin * 2);
+        y = topPad + margin + Math.random() * (H - margin * 2 - topPad - bottomPad);
+      }
+      // check overlap with existing circles
+      let ok = true;
+      for (const c of existing) {
+        if (Math.hypot(c.x - x, c.y - y) < c.r + r + 18) { ok = false; break; }
+      }
+      // check distance from obstacle segments
+      if (ok && obstacles.length) {
+        for (const obs of obstacles) {
+          for (const s of obs.segments) {
+            const d = pointToSegDist(x, y, s.x1, s.y1, s.x2, s.y2);
+            if (d < r + 30) { ok = false; break; }
+          }
+          if (!ok) break;
+        }
+      }
+      if (ok) return { x, y };
+    }
+    return null;
+  }
+
+  function pointToSegDist(px, py, x1, y1, x2, y2) {
+    const dx = x2 - x1, dy = y2 - y1;
+    const len2 = dx * dx + dy * dy;
+    if (len2 < 1e-9) return Math.hypot(px - x1, py - y1);
+    let t = ((px - x1) * dx + (py - y1) * dy) / len2;
+    t = Math.max(0, Math.min(1, t));
+    const qx = x1 + t * dx, qy = y1 + t * dy;
+    return Math.hypot(px - qx, py - qy);
+  }
+
+  function buildObstacle(kind) {
+    const segs = [];
+    const minDim = Math.min(W, H);
+    if (kind === 'meridian') {
+      // vertical wall in the middle with a gap
+      const cx = W / 2;
+      const gapSize = Math.max(120, minDim * 0.22);
+      const gapY = H / 2;
+      const topY = Math.min(120, H * 0.15);
+      const botY = H - Math.min(100, H * 0.12);
+      addSeg(segs, cx, topY, cx, gapY - gapSize / 2);
+      addSeg(segs, cx, gapY + gapSize / 2, cx, botY);
+    } else if (kind === 'gate') {
+      // horizontal wall with a small gap
+      const cy = H / 2;
+      const gapSize = Math.max(110, minDim * 0.2);
+      const gapX = W / 2;
+      addSeg(segs, 60, cy, gapX - gapSize / 2, cy);
+      addSeg(segs, gapX + gapSize / 2, cy, W - 60, cy);
+    } else if (kind === 'corners') {
+      // diagonal corner walls
+      const m = Math.min(140, minDim * 0.18);
+      const topPad = Math.min(80, H * 0.1);
+      const botPad = Math.min(80, H * 0.1);
+      addSeg(segs, 60, m + 60, m, topPad);
+      addSeg(segs, W - 60, m + 60, W - m, topPad);
+      addSeg(segs, 60, H - m - 60, m, H - botPad);
+      addSeg(segs, W - 60, H - m - 60, W - m, H - botPad);
+    } else if (kind === 'cross') {
+      // small cross in center
+      const cx = W / 2, cy = H / 2;
+      const armV = Math.min(80, minDim * 0.12);
+      const armH = Math.min(110, minDim * 0.15);
+      addSeg(segs, cx - armH, cy, cx + armH, cy);
+      addSeg(segs, cx, cy - armV, cx, cy + armV);
+    }
+    return { segments: segs, kind };
+  }
+
+  function addSeg(arr, x1, y1, x2, y2) {
+    const dx = x2 - x1, dy = y2 - y1;
+    const len = Math.hypot(dx, dy);
+    if (len < 0.001) return;
+    arr.push({ x1, y1, x2, y2, nx: -dy / len, ny: dx / len, len });
+  }
+
+  // ---------- level setup ----------
+  function setupLevel(n) {
+    dlog(`setupLevel(${n}) W=${W} H=${H}`);
+    const cfg = LEVELS[n - 1];
+    if (!cfg) { dlog(`!! no cfg for level ${n}`); return; }
+    state.level = n;
+    state.circles = [];
+    state.trail = [];
+    state.mirrors = [];
+    state.drawing = null;
+    state.burstParticles = [];
+    state.obstacles = [];
+
+    // build obstacles first
+    for (const o of cfg.obstacles) {
+      state.obstacles.push(buildObstacle(o));
+    }
+
+    // scale radius to viewport — more aggressive on small screens
+    const sizeScale = Math.min(1, Math.min(W, H) / 800);
+    let rScale = Math.max(0.55, sizeScale);
+
+    // try to place all circles; if we fail, shrink and retry until we fit them all
+    let attempts = 0;
+    while (attempts < 6) {
+      state.circles = [];
+      const rMin = cfg.rMin * rScale;
+      const rMax = cfg.rMax * rScale;
+      let allPlaced = true;
+      for (let i = 0; i < cfg.count; i++) {
+        const r = rMin + Math.random() * (rMax - rMin);
+        const pos = pickPosition(cfg.placement, r, state.circles, state.obstacles);
+        if (pos) {
+          state.circles.push({ x: pos.x, y: pos.y, r, filled: false, pulse: Math.random() * Math.PI * 2, birthT: 0 });
+        } else {
+          allPlaced = false;
+          break;
+        }
+      }
+      if (allPlaced && state.circles.length === cfg.count) break;
+      rScale *= 0.85;
+      attempts++;
+    }
+
+    // SAFETY NET: if we still don't have enough circles, fall back to `wide`
+    // strategy with shrunken radius. This guarantees a playable level.
+    if (state.circles.length < cfg.count) {
+      let fallbackScale = rScale;
+      for (let fallbackTry = 0; fallbackTry < 8; fallbackTry++) {
+        state.circles = [];
+        const rMin = cfg.rMin * fallbackScale;
+        const rMax = cfg.rMax * fallbackScale;
+        let ok = true;
+        for (let i = 0; i < cfg.count; i++) {
+          const r = rMin + Math.random() * (rMax - rMin);
+          const pos = pickPosition('wide', r, state.circles, state.obstacles);
+          if (pos) {
+            state.circles.push({ x: pos.x, y: pos.y, r, filled: false, pulse: Math.random() * Math.PI * 2, birthT: 0 });
+          } else {
+            ok = false;
+            break;
+          }
+        }
+        if (ok && state.circles.length === cfg.count) break;
+        fallbackScale *= 0.8;
+      }
+    }
+
+    // electron start
+    let ex, ey;
+    for (let t = 0; t < 100; t++) {
+      ex = 80 + Math.random() * (W - 160);
+      ey = 120 + Math.random() * (H - 240);
+      let clear = true;
+      for (const c of state.circles) {
+        if (Math.hypot(c.x - ex, c.y - ey) < c.r + 30) { clear = false; break; }
+      }
+      for (const obs of state.obstacles) {
+        for (const s of obs.segments) {
+          if (pointToSegDist(ex, ey, s.x1, s.y1, s.x2, s.y2) < 40) { clear = false; break; }
+        }
+        if (!clear) break;
+      }
+      if (clear) break;
+    }
+    const angle = Math.random() * Math.PI * 2;
+    state.electron.x = ex;
+    state.electron.y = ey;
+    state.electron.vx = Math.cos(angle) * cfg.speed;
+    state.electron.vy = Math.sin(angle) * cfg.speed;
+    state.speed = cfg.speed;
+    state.mirrorLife = cfg.mirrorLife;
+    state.trailLife = cfg.trailLife;
+
+    // header
+    document.getElementById('lvl').textContent = n;
+    document.getElementById('titleTxt').textContent = cfg.title;
+    updateCircleCount();
+    dlog(`L${n} ready: ${state.circles.length}/${cfg.count} circles, e=(${Math.round(ex)},${Math.round(ey)})`);
+  }
+
+  function updateCircleCount() {
+    const filled = state.circles.filter(c => c.filled).length;
+    document.getElementById('cir').textContent = `${filled} / ${state.circles.length}`;
+  }
+
+  // ---------- input ----------
+  function getPoint(e) {
+    if (e.touches && e.touches[0]) {
+      return { x: e.touches[0].clientX, y: e.touches[0].clientY };
+    }
+    return { x: e.clientX, y: e.clientY };
+  }
+
+  function startDraw(e) {
+    if (!state.running) return;
+    e.preventDefault();
+    const p = getPoint(e);
+    state.drawing = { points: [p], born: performance.now() / 1000 };
+  }
+
+  function moveDraw(e) {
+    if (!state.drawing) return;
+    e.preventDefault();
+    const p = getPoint(e);
+    const last = state.drawing.points[state.drawing.points.length - 1];
+    if (Math.hypot(p.x - last.x, p.y - last.y) > 3) {
+      state.drawing.points.push(p);
+    }
+  }
+
+  function endDraw(e) {
+    if (!state.drawing) return;
+    e.preventDefault();
+    if (state.drawing.points.length >= 2) {
+      state.mirrors.push({
+        points: state.drawing.points,
+        born: performance.now() / 1000,
+        segments: buildSegments(state.drawing.points),
+      });
+    }
+    state.drawing = null;
+  }
+
+  function buildSegments(points) {
+    const segs = [];
+    for (let i = 0; i < points.length - 1; i++) {
+      const a = points[i], b = points[i + 1];
+      const dx = b.x - a.x, dy = b.y - a.y;
+      const len = Math.hypot(dx, dy);
+      if (len < 0.0001) continue;
+      segs.push({
+        x1: a.x, y1: a.y, x2: b.x, y2: b.y,
+        nx: -dy / len, ny: dx / len,
+        len,
+      });
+    }
+    return segs;
+  }
+
+  cv.addEventListener('mousedown', startDraw);
+  cv.addEventListener('mousemove', moveDraw);
+  window.addEventListener('mouseup', endDraw);
+  cv.addEventListener('touchstart', startDraw, { passive: false });
+  cv.addEventListener('touchmove', moveDraw, { passive: false });
+  cv.addEventListener('touchend', endDraw, { passive: false });
+  cv.addEventListener('touchcancel', endDraw, { passive: false });
+
+  // ---------- physics ----------
+  function reflectVelocity(vx, vy, nx, ny) {
+    const dot = vx * nx + vy * ny;
+    return { vx: vx - 2 * dot * nx, vy: vy - 2 * dot * ny };
+  }
+
+  function segIntersect(p1, p2, p3, p4) {
+    const x1 = p1.x, y1 = p1.y, x2 = p2.x, y2 = p2.y;
+    const x3 = p3.x, y3 = p3.y, x4 = p4.x, y4 = p4.y;
+    const denom = (x1 - x2) * (y3 - y4) - (y1 - y2) * (x3 - x4);
+    if (Math.abs(denom) < 1e-9) return null;
+    const t = ((x1 - x3) * (y3 - y4) - (y1 - y3) * (x3 - x4)) / denom;
+    const u = -((x1 - x2) * (y1 - y3) - (y1 - y2) * (x1 - x3)) / denom;
+    if (t > 0.001 && t < 1 && u > 0.001 && u < 1) {
+      return { x: x1 + t * (x2 - x1), y: y1 + t * (y2 - y1), t };
+    }
+    return null;
+  }
+
+  // ---------- update ----------
+  let lastT = performance.now() / 1000;
+
+  function tick() {
+    const now = performance.now() / 1000;
+    let dt = Math.min(now - lastT, 0.033);
+    lastT = now;
+    if (state.running) update(dt, now);
+    draw(now);
+    requestAnimationFrame(tick);
+  }
+
+  function update(dt, now) {
+    const e = state.electron;
+    let nx = e.x + e.vx * dt;
+    let ny = e.y + e.vy * dt;
+
+    state.mirrors = state.mirrors.filter(m => now - m.born < state.mirrorLife);
+    state.trail = state.trail.filter(p => now - p.t < state.trailLife);
+
+    // collect all reflective segments (mirrors + obstacles)
+    const movement = { p1: { x: e.x, y: e.y }, p2: { x: nx, y: ny } };
+    let bestHit = null;
+    let bestSeg = null;
+    for (const m of state.mirrors) {
+      for (const s of m.segments) {
+        const hit = segIntersect(
+          movement.p1, movement.p2,
+          { x: s.x1, y: s.y1 }, { x: s.x2, y: s.y2 }
+        );
+        if (hit && (!bestHit || hit.t < bestHit.t)) {
+          bestHit = hit; bestSeg = s;
+        }
+      }
+    }
+    for (const obs of state.obstacles) {
+      for (const s of obs.segments) {
+        const hit = segIntersect(
+          movement.p1, movement.p2,
+          { x: s.x1, y: s.y1 }, { x: s.x2, y: s.y2 }
+        );
+        if (hit && (!bestHit || hit.t < bestHit.t)) {
+          bestHit = hit; bestSeg = s;
+        }
+      }
+    }
+
+    if (bestHit) {
+      e.x = bestHit.x - e.vx * dt * 0.01;
+      e.y = bestHit.y - e.vy * dt * 0.01;
+      const r = reflectVelocity(e.vx, e.vy, bestSeg.nx, bestSeg.ny);
+      e.vx = r.vx;
+      e.vy = r.vy;
+      spawnReflectBurst(bestHit.x, bestHit.y);
+    } else {
+      e.x = nx;
+      e.y = ny;
+    }
+
+    // wall bounce
+    const pad = 6;
+    if (e.x < pad) { e.x = pad; e.vx = Math.abs(e.vx); }
+    if (e.x > W - pad) { e.x = W - pad; e.vx = -Math.abs(e.vx); }
+    if (e.y < pad) { e.y = pad; e.vy = Math.abs(e.vy); }
+    if (e.y > H - pad) { e.y = H - pad; e.vy = -Math.abs(e.vy); }
+
+    state.trail.push({ x: e.x, y: e.y, t: now });
+
+    // self-crossing detection
+    if (state.trail.length > 8) {
+      const cur1 = state.trail[state.trail.length - 2];
+      const cur2 = state.trail[state.trail.length - 1];
+      for (let i = state.trail.length - 10; i > 0; i--) {
+        const a = state.trail[i - 1];
+        const b = state.trail[i];
+        if (now - b.t < 0.3) continue;
+        const hit = segIntersect(cur1, cur2, a, b);
+        if (hit) {
+          handleSelfCross(hit.x, hit.y, now);
+          state.trail = [{ x: e.x, y: e.y, t: now }];
+          break;
+        }
+      }
+    }
+
+    // burst particle update
+    for (const p of state.burstParticles) {
+      p.x += p.vx * dt;
+      p.y += p.vy * dt;
+      p.vx *= 0.96; p.vy *= 0.96;
+      p.life -= dt;
+    }
+    state.burstParticles = state.burstParticles.filter(p => p.life > 0);
+
+    // pulses
+    for (const c of state.circles) c.pulse += dt * 1.5;
+  }
+
+  function handleSelfCross(x, y, now) {
+    for (const c of state.circles) {
+      if (!c.filled && Math.hypot(c.x - x, c.y - y) <= c.r) {
+        c.filled = true;
+        c.birthT = now;
+        spawnParticleBirth(c.x, c.y);
+        updateCircleCount();
+        checkLevelComplete();
+        return;
+      }
+    }
+    spawnFizzle(x, y);
+  }
+
+  function spawnReflectBurst(x, y) {
+    for (let i = 0; i < 6; i++) {
+      const a = Math.random() * Math.PI * 2;
+      const s = 60 + Math.random() * 80;
+      state.burstParticles.push({
+        x, y, vx: Math.cos(a) * s, vy: Math.sin(a) * s,
+        life: 0.4, max: 0.4, color: '#4cc9f0', size: 1.5,
+      });
+    }
+  }
+
+  function spawnFizzle(x, y) {
+    for (let i = 0; i < 8; i++) {
+      const a = Math.random() * Math.PI * 2;
+      const s = 30 + Math.random() * 40;
+      state.burstParticles.push({
+        x, y, vx: Math.cos(a) * s, vy: Math.sin(a) * s,
+        life: 0.5, max: 0.5, color: '#6b5b95', size: 1.2,
+      });
+    }
+  }
+
+  function spawnParticleBirth(x, y) {
+    for (let i = 0; i < 40; i++) {
+      const a = Math.random() * Math.PI * 2;
+      const s = 80 + Math.random() * 200;
+      state.burstParticles.push({
+        x, y, vx: Math.cos(a) * s, vy: Math.sin(a) * s,
+        life: 1.2, max: 1.2,
+        color: Math.random() < 0.5 ? '#f0b429' : '#ff3b6b',
+        size: 1.5 + Math.random() * 2,
+      });
+    }
+    for (let i = 0; i < 24; i++) {
+      const a = (i / 24) * Math.PI * 2;
+      state.burstParticles.push({
+        x, y, vx: Math.cos(a) * 180, vy: Math.sin(a) * 180,
+        life: 0.8, max: 0.8, color: '#f4ecdc', size: 2,
+      });
+    }
+  }
+
+  function checkLevelComplete() {
+    if (state.circles.every(c => c.filled)) {
+      dlog(`L${state.level} COMPLETE`);
+      state.running = false;
+      setTimeout(() => {
+        if (state.level >= LEVELS.length) {
+          document.getElementById('end').classList.remove('hidden');
+        } else {
+          const nextCfg = LEVELS[state.level];
+          document.getElementById('nextLvl').textContent = state.level + 1;
+          document.getElementById('nextTitle').textContent = nextCfg.title;
+          document.getElementById('nextSub').textContent = nextCfg.sub;
+          document.getElementById('nextFlavor').textContent = nextCfg.flavor;
+          document.getElementById('next').classList.remove('hidden');
+          dlog(`showing next-overlay for L${state.level + 1}`);
+        }
+      }, 1100);
+    }
+  }
+
+  // ---------- draw ----------
+  function draw(now) {
+    ctx.fillStyle = 'rgba(10, 6, 18, 0.18)';
+    ctx.fillRect(0, 0, W, H);
+
+    // obstacles
+    for (const obs of state.obstacles) {
+      ctx.save();
+      ctx.strokeStyle = 'rgba(107, 91, 149, 0.9)';
+      ctx.lineWidth = 3;
+      ctx.lineCap = 'round';
+      ctx.shadowColor = '#6b5b95';
+      ctx.shadowBlur = 8;
+      ctx.beginPath();
+      for (const s of obs.segments) {
+        ctx.moveTo(s.x1, s.y1);
+        ctx.lineTo(s.x2, s.y2);
+      }
+      ctx.stroke();
+      // hash marks for texture
+      ctx.shadowBlur = 0;
+      ctx.strokeStyle = 'rgba(107, 91, 149, 0.4)';
+      ctx.lineWidth = 1;
+      for (const s of obs.segments) {
+        const steps = Math.floor(s.len / 14);
+        for (let i = 0; i < steps; i++) {
+          const t = (i + 0.5) / steps;
+          const px = s.x1 + (s.x2 - s.x1) * t;
+          const py = s.y1 + (s.y2 - s.y1) * t;
+          ctx.beginPath();
+          ctx.moveTo(px - s.nx * 5, py - s.ny * 5);
+          ctx.lineTo(px + s.nx * 5, py + s.ny * 5);
+          ctx.stroke();
+        }
+      }
+      ctx.restore();
+    }
+
+    // circles
+    for (const c of state.circles) {
+      const pulse = Math.sin(c.pulse) * 0.5 + 0.5;
+      if (c.filled) {
+        ctx.save();
+        const since = now - c.birthT;
+        const ringExpand = Math.min(since * 80, 40);
+        // expanding birth ring
+        if (since < 0.8) {
+          ctx.strokeStyle = `rgba(240, 180, 41, ${1 - since / 0.8})`;
+          ctx.lineWidth = 2;
+          ctx.beginPath();
+          ctx.arc(c.x, c.y, c.r + ringExpand, 0, Math.PI * 2);
+          ctx.stroke();
+        }
+        ctx.strokeStyle = 'rgba(240, 180, 41, 0.7)';
+        ctx.lineWidth = 1.5;
+        ctx.beginPath();
+        ctx.arc(c.x, c.y, c.r, 0, Math.PI * 2);
+        ctx.stroke();
+        const g = ctx.createRadialGradient(c.x, c.y, 0, c.x, c.y, c.r);
+        g.addColorStop(0, 'rgba(240, 180, 41, 0.18)');
+        g.addColorStop(1, 'rgba(240, 180, 41, 0)');
+        ctx.fillStyle = g;
+        ctx.beginPath();
+        ctx.arc(c.x, c.y, c.r, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.fillStyle = '#f0b429';
+        ctx.beginPath();
+        ctx.arc(c.x, c.y, 3, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+      } else {
+        ctx.save();
+        ctx.strokeStyle = `rgba(255, 59, 107, ${0.55 + pulse * 0.25})`;
+        ctx.lineWidth = 1.5;
+        ctx.setLineDash([6, 6]);
+        ctx.lineDashOffset = -now * 12;
+        ctx.beginPath();
+        ctx.arc(c.x, c.y, c.r, 0, Math.PI * 2);
+        ctx.stroke();
+        ctx.setLineDash([]);
+        ctx.strokeStyle = 'rgba(255, 59, 107, 0.3)';
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(c.x - 4, c.y); ctx.lineTo(c.x + 4, c.y);
+        ctx.moveTo(c.x, c.y - 4); ctx.lineTo(c.x, c.y + 4);
+        ctx.stroke();
+        ctx.restore();
+      }
+    }
+
+    // trail
+    if (state.trail.length > 1) {
+      for (let i = 1; i < state.trail.length; i++) {
+        const a = state.trail[i - 1];
+        const b = state.trail[i];
+        const age = now - b.t;
+        const alpha = Math.max(0, 1 - age / state.trailLife);
+        ctx.strokeStyle = `rgba(76, 201, 240, ${alpha * 0.7})`;
+        ctx.lineWidth = 1.4;
+        ctx.lineCap = 'round';
+        ctx.beginPath();
+        ctx.moveTo(a.x, a.y);
+        ctx.lineTo(b.x, b.y);
+        ctx.stroke();
+      }
+    }
+
+    // mirrors
+    for (const m of state.mirrors) {
+      const age = (now - m.born) / state.mirrorLife;
+      const remaining = 1 - age;
+      ctx.save();
+      ctx.strokeStyle = `rgba(244, 236, 220, ${remaining * 0.95})`;
+      ctx.lineWidth = 2.5;
+      ctx.lineCap = 'round';
+      ctx.lineJoin = 'round';
+      ctx.shadowColor = '#f4ecdc';
+      ctx.shadowBlur = 12 * remaining;
+      ctx.beginPath();
+      ctx.moveTo(m.points[0].x, m.points[0].y);
+      for (let i = 1; i < m.points.length; i++) {
+        ctx.lineTo(m.points[i].x, m.points[i].y);
+      }
+      ctx.stroke();
+      ctx.shadowBlur = 0;
+      const last = m.points[m.points.length - 1];
+      ctx.fillStyle = `rgba(240, 180, 41, ${remaining})`;
+      ctx.beginPath();
+      ctx.arc(last.x, last.y, 3 + remaining * 2, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+    }
+
+    // active drawing
+    if (state.drawing && state.drawing.points.length > 1) {
+      ctx.save();
+      ctx.strokeStyle = 'rgba(244, 236, 220, 0.85)';
+      ctx.lineWidth = 2.5;
+      ctx.lineCap = 'round';
+      ctx.lineJoin = 'round';
+      ctx.setLineDash([4, 4]);
+      ctx.beginPath();
+      const pts = state.drawing.points;
+      ctx.moveTo(pts[0].x, pts[0].y);
+      for (let i = 1; i < pts.length; i++) ctx.lineTo(pts[i].x, pts[i].y);
+      ctx.stroke();
+      ctx.restore();
+    }
+
+    // particles
+    for (const p of state.burstParticles) {
+      const a = p.life / p.max;
+      ctx.fillStyle = p.color;
+      ctx.globalAlpha = a;
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    ctx.globalAlpha = 1;
+
+    // electron
+    const e = state.electron;
+    const halo = ctx.createRadialGradient(e.x, e.y, 0, e.x, e.y, 22);
+    halo.addColorStop(0, 'rgba(255, 59, 107, 0.6)');
+    halo.addColorStop(0.5, 'rgba(255, 59, 107, 0.15)');
+    halo.addColorStop(1, 'rgba(255, 59, 107, 0)');
+    ctx.fillStyle = halo;
+    ctx.beginPath();
+    ctx.arc(e.x, e.y, 22, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = '#fff';
+    ctx.beginPath();
+    ctx.arc(e.x, e.y, 4, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = '#ff3b6b';
+    ctx.beginPath();
+    ctx.arc(e.x, e.y, 2, 0, Math.PI * 2);
+    ctx.fill();
+  }
+
+  // ---------- overlay handlers ----------
+  function startLevel(n) {
+    dlog(`startLevel(${n})`);
+    state.running = false;
+    setupLevel(n);
+    lastT = performance.now() / 1000;
+    setTimeout(() => {
+      state.running = true;
+      dlog(`L${n} running=true`);
+    }, 200);
+  }
+
+  function bindOverlay(id, fn) {
+    const el = document.getElementById(id);
+    let handled = false;
+    const handler = (e) => {
+      if (handled) return;
+      handled = true;
+      e.preventDefault();
+      e.stopPropagation();
+      dlog(`overlay tap: ${id} (${e.type})`);
+      el.classList.add('hidden');
+      state.drawing = null;
+      fn();
+      setTimeout(() => { handled = false; }, 600);
+    };
+    el.addEventListener('click', handler);
+    el.addEventListener('touchstart', handler, { passive: false });
+  }
+
+  bindOverlay('intro', () => startLevel(1));
+  bindOverlay('next', () => startLevel(state.level + 1));
+  bindOverlay('end', () => startLevel(1));
+
+  tick();
+})();
+</script>
+</body>
+</html>
